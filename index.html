@@ -157,7 +157,7 @@
         <div class="card">
             <div class="card-header">♟️ Optimal Move</div>
             <div id="bestMove" class="move-display">--</div>
-            <div id="evalText" class="status-text">Waiting for engine data...</div>
+            <div id="evalText" class="status-text">Connecting to engine...</div>
         </div>
 
         <!-- Engine Config -->
@@ -215,15 +215,26 @@
         const toggleBtn = document.getElementById('toggleBtn');
         const findBtn = document.getElementById('findBtn');
 
-        // Listen for data pushed from Tampermonkey via Telegram WebApp
-        tg.onEvent('viewportChanged', () => {});
-        window.addEventListener('message', (event) => {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.move) bestMoveEl.innerText = data.move;
-                if (data.eval) evalTextEl.innerText = data.eval;
-            } catch(e) {}
-        });
+        // Extract move data out of raw text payloads
+        function parseMoveFromText(text) {
+            const moveMatch = text.match(/`([a-h][1-8][a-h][1-8][qrbn]?)`/i) || text.match(/Response: `?([a-h][1-8][a-h][1-8])`?/i);
+            if (moveMatch && moveMatch[1]) {
+                bestMoveEl.innerText = moveMatch[1];
+            }
+            const evalMatch = text.match(/Eval:\s*`([^`]+)`/i);
+            if (evalMatch && evalMatch[1]) {
+                evalTextEl.innerText = `Eval: ${evalMatch[1]}`;
+            } else {
+                evalTextEl.innerText = "Engine Active";
+            }
+        }
+
+        // WebApp cloud storage / message listener
+        if (window.TelegramGameProxy) {
+            window.TelegramGameProxy.receiveEvent = function(eventType, eventData) {
+                if (eventData && eventData.text) parseMoveFromText(eventData.text);
+            };
+        }
 
         eloRange.addEventListener('input', (e) => { eloVal.innerText = e.target.value; });
         eloRange.addEventListener('change', (e) => {
