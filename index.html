@@ -89,9 +89,6 @@
         let autoOn = false;
         let smartOn = true;
 
-        // UI Element Binding
-        const bestMoveEl = document.getElementById('bestMove');
-        const evalTextEl = document.getElementById('evalText');
         const eloRange = document.getElementById('eloRange');
         const eloVal = document.getElementById('eloVal');
         const smartToggle = document.getElementById('smartToggle');
@@ -103,43 +100,11 @@
         });
 
         eloRange.addEventListener('change', (e) => {
-            sendCommand(`/elo ${e.target.value}`);
+            sendDataToBot(`/elo ${e.target.value}`);
             tg.HapticFeedback.selectionChanged();
         });
 
         smartToggle.addEventListener('click', () => {
             smartOn = !smartOn;
             smartToggle.innerText = `🧠 Smart Depth: ${smartOn ? 'ON' : 'OFF'}`;
-            sendCommand('/smart');
-            tg.HapticFeedback.impactOccurred('medium');
-        });
-
-        toggleBtn.addEventListener('click', () => {
-            autoOn = !autoOn;
-            if (autoOn) {
-                toggleBtn.innerText = "🔴 Turn Auto-Analysis OFF";
-                toggleBtn.style.backgroundColor = "#ff3b30";
-                sendCommand('/on');
-            } else {
-                toggleBtn.innerText = "🟢 Turn Auto-Analysis ON";
-                toggleBtn.style.backgroundColor = "#34c759";
-                sendCommand('/off');
-            }
-            tg.HapticFeedback.impactOccurred('heavy');
-        });
-
-        findBtn.addEventListener('click', () => {
-            sendCommand('/find');
-            tg.HapticFeedback.notificationOccurred('success');
-        });
-
-        function sendCommand(text) {
-            // Sends command back to your Telegram bot chat context
-            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-                // If opened via bot inline button, it can communicate back via server or data
-                fetch(`https://api.telegram.org/bot8819334006:AAG0woaNluBzI5k8_xL-V49EhudEkUDOmiw/sendMessage?chat_id=${tg.initDataUnsafe.user.id}&text=${encodeURIComponent(text)}`);
-            }
-        }
-    </script>
-</body>
-</html>
+            sendDataToBot('/smart');
