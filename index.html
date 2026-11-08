@@ -17,11 +17,7 @@
             --accent-red: #ff3b30;
         }
 
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -50,7 +46,6 @@
             padding: 20px;
             width: 100%;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
@@ -88,7 +83,7 @@
             margin-bottom: 10px;
         }
 
-        .elo-badge {
+        .badge {
             background: rgba(255, 255, 255, 0.1);
             padding: 4px 10px;
             border-radius: 8px;
@@ -141,46 +136,43 @@
             gap: 8px;
         }
 
-        button:active {
-            transform: scale(0.98);
-            opacity: 0.9;
-        }
-
-        button.btn-toggle-on {
-            background-color: var(--accent-green);
-            color: #ffffff;
-        }
-
-        button.btn-toggle-off {
-            background-color: var(--accent-red);
-            color: #ffffff;
-        }
-
-        button.btn-secondary {
-            background-color: rgba(255, 255, 255, 0.08);
-            color: var(--text-color);
-        }
+        button:active { transform: scale(0.98); opacity: 0.9; }
+        button.btn-toggle-on { background-color: var(--accent-green); color: #fff; }
+        button.btn-toggle-off { background-color: var(--accent-red); color: #fff; }
+        button.btn-secondary { background-color: rgba(255, 255, 255, 0.08); color: var(--text-color); }
+        
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <!-- Live Evaluation Display -->
+        <!-- Move Output -->
         <div class="card">
             <div class="card-header">♟️ Optimal Move</div>
             <div id="bestMove" class="move-display">--</div>
             <div id="evalText" class="status-text">Engine Idle</div>
         </div>
 
-        <!-- Engine Strength Config -->
+        <!-- Engine Config -->
         <div class="card">
             <div class="card-header">🎛️ Engine Configuration</div>
+            
             <div class="slider-header">
                 <span>Elo Strength</span>
-                <span id="eloVal" class="elo-badge">3700</span>
+                <span id="eloVal" class="badge">3700</span>
             </div>
             <input type="range" id="eloRange" min="1000" max="4000" step="50" value="3700">
-            <button id="smartToggle" class="btn-secondary" style="margin-top: 12px;">
+
+            <div id="manualDepthContainer" class="hidden" style="margin-top: 18px;">
+                <div class="slider-header">
+                    <span>Manual Search Depth</span>
+                    <span id="depthVal" class="badge">24</span>
+                </div>
+                <input type="range" id="depthRange" min="4" max="30" step="1" value="24">
+            </div>
+
+            <button id="smartToggle" class="btn-secondary" style="margin-top: 14px;">
                 🧠 Smart Depth: <b>ON</b>
             </button>
         </div>
@@ -197,8 +189,6 @@
 
     <script>
         const tg = window.Telegram.WebApp;
-        
-        // Ensure web app view expands full height
         tg.ready();
         tg.expand();
 
@@ -207,22 +197,33 @@
 
         const eloRange = document.getElementById('eloRange');
         const eloVal = document.getElementById('eloVal');
+        const depthRange = document.getElementById('depthRange');
+        const depthVal = document.getElementById('depthVal');
+        const manualDepthContainer = document.getElementById('manualDepthContainer');
         const smartToggle = document.getElementById('smartToggle');
         const toggleBtn = document.getElementById('toggleBtn');
         const findBtn = document.getElementById('findBtn');
 
-        eloRange.addEventListener('input', (e) => {
-            eloVal.innerText = e.target.value;
-        });
-
+        eloRange.addEventListener('input', (e) => { eloVal.innerText = e.target.value; });
         eloRange.addEventListener('change', (e) => {
             sendDataToBot(`/elo ${e.target.value}`);
+            if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
+        });
+
+        depthRange.addEventListener('input', (e) => { depthVal.innerText = e.target.value; });
+        depthRange.addEventListener('change', (e) => {
+            sendDataToBot(`/depth ${e.target.value}`);
             if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
         });
 
         smartToggle.addEventListener('click', () => {
             smartOn = !smartOn;
             smartToggle.innerHTML = `🧠 Smart Depth: <b>${smartOn ? 'ON' : 'OFF'}</b>`;
+            if (smartOn) {
+                manualDepthContainer.classList.add('hidden');
+            } else {
+                manualDepthContainer.classList.remove('hidden');
+            }
             sendDataToBot('/smart');
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         });
