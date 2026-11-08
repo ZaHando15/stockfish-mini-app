@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stockfish Hub</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #1f2125);
+            color: var(--tg-theme-text-color, #ffffff);
+            margin: 0;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .card {
+            background: var(--tg-theme-secondary-bg-color, #2b2d31);
+            border-radius: 12px;
+            padding: 16px;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+        h2 { margin-top: 0; font-size: 18px; color: var(--tg-theme-hint-color, #818c99); }
+        .move-display {
+            font-size: 36px;
+            font-weight: bold;
+            color: #4cd964;
+            letter-spacing: 2px;
+            margin: 8px 0;
+        }
+        button {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            width: 100%;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+        button:active { opacity: 0.8; }
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+        }
+        input[type="range"] {
+            width: 100%;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>♟️ BEST RESPONSE</h2>
+        <div id="bestMove" class="move-display">Waiting...</div>
+        <div id="evalText" style="font-size: 14px; color: #aaa;">Status: Idle</div>
+    </div>
+
+    <div class="card">
+        <h2>🎛️ ENGINE CONTROLS</h2>
+        <div class="slider-group">
+            <label for="eloRange">Elo Strength: <span id="eloVal">3700</span></label>
+            <input type="range" id="eloRange" min="1000" max="4000" step="50" value="3700">
+        </div>
+        <button id="smartToggle">🧠 Smart Depth: ON</button>
+    </div>
+
+    <div class="card">
+        <h2>⚡ QUICK ACTIONS</h2>
+        <button id="toggleBtn" style="background-color: #34c759;">🟢 Turn Auto-Analysis ON</button>
+        <button id="findBtn">🔍 Force Re-Analyze</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let autoOn = false;
+        let smartOn = true;
+
+        // UI Element Binding
+        const bestMoveEl = document.getElementById('bestMove');
+        const evalTextEl = document.getElementById('evalText');
+        const eloRange = document.getElementById('eloRange');
+        const eloVal = document.getElementById('eloVal');
+        const smartToggle = document.getElementById('smartToggle');
+        const toggleBtn = document.getElementById('toggleBtn');
+        const findBtn = document.getElementById('findBtn');
+
+        eloRange.addEventListener('input', (e) => {
+            eloVal.innerText = e.target.value;
+        });
+
+        eloRange.addEventListener('change', (e) => {
+            sendCommand(`/elo ${e.target.value}`);
+            tg.HapticFeedback.selectionChanged();
+        });
+
+        smartToggle.addEventListener('click', () => {
+            smartOn = !smartOn;
+            smartToggle.innerText = `🧠 Smart Depth: ${smartOn ? 'ON' : 'OFF'}`;
+            sendCommand('/smart');
+            tg.HapticFeedback.impactOccurred('medium');
+        });
+
+        toggleBtn.addEventListener('click', () => {
+            autoOn = !autoOn;
+            if (autoOn) {
+                toggleBtn.innerText = "🔴 Turn Auto-Analysis OFF";
+                toggleBtn.style.backgroundColor = "#ff3b30";
+                sendCommand('/on');
+            } else {
+                toggleBtn.innerText = "🟢 Turn Auto-Analysis ON";
+                toggleBtn.style.backgroundColor = "#34c759";
+                sendCommand('/off');
+            }
+            tg.HapticFeedback.impactOccurred('heavy');
+        });
+
+        findBtn.addEventListener('click', () => {
+            sendCommand('/find');
+            tg.HapticFeedback.notificationOccurred('success');
+        });
+
+        function sendCommand(text) {
+            // Sends command back to your Telegram bot chat context
+            if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                // If opened via bot inline button, it can communicate back via server or data
+                fetch(`https://api.telegram.org/bot8819334006:AAG0woaNluBzI5k8_xL-V49EhudEkUDOmiw/sendMessage?chat_id=${tg.initDataUnsafe.user.id}&text=${encodeURIComponent(text)}`);
+            }
+        }
+    </script>
+</body>
+</html>
