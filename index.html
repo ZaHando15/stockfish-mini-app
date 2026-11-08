@@ -113,6 +113,12 @@
             box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
         }
 
+        .btn-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
         .btn-group {
             display: flex;
             flex-direction: column;
@@ -125,7 +131,7 @@
             border: none;
             border-radius: 12px;
             padding: 14px;
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             width: 100%;
             cursor: pointer;
@@ -147,11 +153,11 @@
 <body>
 
     <div class="container">
-        <!-- Move Output -->
+        <!-- Live Move Output -->
         <div class="card">
             <div class="card-header">♟️ Optimal Move</div>
             <div id="bestMove" class="move-display">--</div>
-            <div id="evalText" class="status-text">Engine Idle</div>
+            <div id="evalText" class="status-text">Waiting for engine data...</div>
         </div>
 
         <!-- Engine Config -->
@@ -172,9 +178,10 @@
                 <input type="range" id="depthRange" min="4" max="30" step="1" value="24">
             </div>
 
-            <button id="smartToggle" class="btn-secondary" style="margin-top: 14px;">
-                🧠 Smart Depth: <b>ON</b>
-            </button>
+            <div class="btn-grid" style="margin-top: 14px;">
+                <button id="autoDepthToggle" class="btn-toggle-on">📊 Auto Depth: ON</button>
+                <button id="smartToggle" class="btn-toggle-on">🧠 Smart Depth: ON</button>
+            </div>
         </div>
 
         <!-- System Controls -->
@@ -193,16 +200,30 @@
         tg.expand();
 
         let autoOn = false;
+        let autoDepthOn = true;
         let smartOn = true;
 
+        const bestMoveEl = document.getElementById('bestMove');
+        const evalTextEl = document.getElementById('evalText');
         const eloRange = document.getElementById('eloRange');
         const eloVal = document.getElementById('eloVal');
         const depthRange = document.getElementById('depthRange');
         const depthVal = document.getElementById('depthVal');
         const manualDepthContainer = document.getElementById('manualDepthContainer');
+        const autoDepthToggle = document.getElementById('autoDepthToggle');
         const smartToggle = document.getElementById('smartToggle');
         const toggleBtn = document.getElementById('toggleBtn');
         const findBtn = document.getElementById('findBtn');
+
+        // Listen for data pushed from Tampermonkey via Telegram WebApp
+        tg.onEvent('viewportChanged', () => {});
+        window.addEventListener('message', (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.move) bestMoveEl.innerText = data.move;
+                if (data.eval) evalTextEl.innerText = data.eval;
+            } catch(e) {}
+        });
 
         eloRange.addEventListener('input', (e) => { eloVal.innerText = e.target.value; });
         eloRange.addEventListener('change', (e) => {
@@ -216,14 +237,23 @@
             if (tg.HapticFeedback) tg.HapticFeedback.selectionChanged();
         });
 
-        smartToggle.addEventListener('click', () => {
-            smartOn = !smartOn;
-            smartToggle.innerHTML = `🧠 Smart Depth: <b>${smartOn ? 'ON' : 'OFF'}</b>`;
-            if (smartOn) {
+        autoDepthToggle.addEventListener('click', () => {
+            autoDepthOn = !autoDepthOn;
+            autoDepthToggle.className = autoDepthOn ? "btn-toggle-on" : "btn-toggle-off";
+            autoDepthToggle.innerHTML = `📊 Auto Depth: ${autoDepthOn ? 'ON' : 'OFF'}`;
+            if (autoDepthOn) {
                 manualDepthContainer.classList.add('hidden');
             } else {
                 manualDepthContainer.classList.remove('hidden');
             }
+            sendDataToBot('/autodepth');
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+        });
+
+        smartToggle.addEventListener('click', () => {
+            smartOn = !smartOn;
+            smartToggle.className = smartOn ? "btn-toggle-on" : "btn-toggle-off";
+            smartToggle.innerHTML = `🧠 Smart Depth: ${smartOn ? 'ON' : 'OFF'}`;
             sendDataToBot('/smart');
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
         });
